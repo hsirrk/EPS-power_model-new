@@ -16,6 +16,27 @@ create a dictionary to store all the power consumption values for each action
 import datetime
 import time
 
+" The dictonary below shows the actions as keys and the respective power consumption(watts) as their value"
+power_consumption = {
+  "ADCS_IDLE": 0.3044,  # Watts
+  "ADCS_ACTUATE": 2.0,  
+  "ADCS_OFF": 0,
+  "CAM_CAPTURE": 0.726,
+  "CAM_OFF": 0,
+  "OBC_LOW_POWER": 0.6,  
+  "OBC_IDLE": 0.63,
+  "COMMS_IDLE": 0.0005,
+  "COMMS_RX": 0.0658,
+  "COMMS_TX": 3.5632,
+  "COMMS_TX_BEACON": 3.5632,
+  "COMMS_ANT_DEPLOY": 5.05,
+  "CENT_TEST": 0.2678,
+  "CENT_OFF": 0,
+  "EPS_IDLE": 0.075,
+  "EPS_LOW_POWER": 0.043
+}
+
+
 class FSM:
   """
   This class handles action processing for the CubeSat.
