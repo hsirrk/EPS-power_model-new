@@ -36,6 +36,11 @@ power_consumption = {
   "EPS_LOW_POWER": 0.043
 }
 
+voltage_consumption = {
+    "Camera_OBC": 3.3, #volts
+    "LPU": 3.3, #volts
+    "Torquers": 5.5
+}
 
 class FSM:
   """
