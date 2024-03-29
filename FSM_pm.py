@@ -16,7 +16,7 @@ import time
 
 from Engine_pm import get_running_total  # Assuming this retrieves total power available
 
-running_total=get_running_total
+running_total=get_running_total()
 
 
 # Power consumption dictionary (watts)
