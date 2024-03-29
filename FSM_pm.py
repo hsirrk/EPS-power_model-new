@@ -1,39 +1,61 @@
 """
-  This is the FSM file, it is responsible for the consumption in the power model. 
-  
-  It operates based on the FSM diagram.
-  
-  An action has to be requested to the power model, if the model deems the action to be doable based on the total power avaliable, the action gets perfromed. 
+This is the FSM file, responsible for managing power consumption in the power model.
 
+It operates based on the provided power consumption dictionary. An action is requested, 
+and the FSM checks if it's feasible based on the available power (obtained from the engine).
 
-things to work on:
+Input: Function (action name), State
+Output: Action success/failure and (potentially) remaining power
 
-create a safe mode
-check power availability based on the power genereated(made by the engine file)
-make low power mode work
-create a dictionary to store all the power consumption values for each action
+Notes: All functionalities consume different power in different states (refer to 
+the power consumption dictionary).
 """
+
 import datetime
 import time
 
-" The dictonary below shows the actions as keys and the respective power consumption(watts) as their value"
+from Engine_pm import get_running_total  # Assuming this retrieves total power available
+
+running_total=get_running_total
+
+
+# Power consumption dictionary (watts)
 power_consumption = {
-  "ADCS_IDLE": 0.3044,  # Watts
-  "ADCS_ACTUATE": 2.0,  
-  "ADCS_OFF": 0,
-  "CAM_CAPTURE": 0.726,
-  "CAM_OFF": 0,
-  "OBC_LOW_POWER": 0.6,  
-  "OBC_IDLE": 0.63,
-  "COMMS_IDLE": 0.0005,
-  "COMMS_RX": 0.0658,
-  "COMMS_TX": 3.5632,
-  "COMMS_TX_BEACON": 3.5632,
-  "COMMS_ANT_DEPLOY": 5.05,
-  "CENT_TEST": 0.2678,
-  "CENT_OFF": 0,
-  "EPS_IDLE": 0.075,
-  "EPS_LOW_POWER": 0.043
+    "ADCS_IDLE": 0.3044,
+    "ADCS_ACTUATE": 2.0,
+    "ADCS_OFF": 0,
+    "CAM_CAPTURE": 0.726,
+    "CAM_OFF": 0,
+    "OBC_LOW_POWER": 0.6,
+    "OBC_IDLE": 0.63,
+    "COMMS_IDLE": 0.0005,
+    "COMMS_RX": 0.0658,
+    "COMMS_TX": 3.5632,
+    "COMMS_TX_BEACON": 3.5632,
+    "COMMS_ANT_DEPLOY": 5.05,
+    "CENT_TEST": 0.2678,
+    "CENT_OFF": 0,
+    "EPS_IDLE": 0.075,
+    "EPS_LOW_POWER": 0.043
+}
+
+detumbling = {
+    "ADCS_IDLE": 79.04,  # DETUMBLING %_active
+    "ADCS_ACTUATE": 0.962,
+    "ADCS_OFF": 0,
+    "CAM_CAPTURE": 0,
+    "CAM_OFF": 0,
+    "OBC_LOW_POWER": 100,  # Assuming low power mode is active (100)
+    "OBC_IDLE": 0,         # Assuming idle mode is inactive (0)
+    "COMMS_IDLE": 0,
+    "COMMS_RX": 0,
+    "COMMS_TX": 0,
+    "COMMS_TX_BEACON": 0,    # Assuming communication is inactive (0)
+    "COMMS_ANT_DEPLOY": 0,   # Assuming antenna deployment is inactive (0)
+    "CENT_TEST": 0,
+    "CENT_OFF": 100,        # Assuming centrifuge is off (100)
+    "EPS_IDLE": 0,          # Assuming EPS is not in idle mode (0)
+    "EPS_LOW_POWER": 0       # Assuming EPS is not in low power mode (0)
 }
 
 voltage_consumption = {
@@ -42,120 +64,59 @@ voltage_consumption = {
     "Torquers": 5.5
 }
 
+
+
 class FSM:
-  """
-  This class handles action processing for the CubeSat.
-  """
 
-  def __init__(self, engine):
-    # Current state of the FSM
-    self.state = "idle"  # Assuming "idle" is the initial state
-
-    # Reference to the engine object for power availability checks
-    self.engine = engine
-
-  def process_action(self, action_name, duration):
     """
-    Processes an action based on the current state and power availability.
-
-    This function checks if the action is valid in the current state, 
-    if there's enough power to perform it, and then executes the action 
-    (state transition and battery level update) if both conditions are met.
-
-    Args:
-      action_name (str): The name of the action to be performed.
-      duration (float): The duration (in seconds) for which to perform the action.
-
-    Raises:
-      Exception: If the action is invalid for the current state or power is insufficient.
+    This class handles action processing for the CubeSat, managing power consumption.
     """
 
-    # Check if action is valid in the current state
-    if self.is_valid_action(action_name):
-      # Check power availability before performing the action
-      if self.engine.is_action_feasible(datetime.datetime.now(), action_name, duration):
-        self._execute_action(action_name, duration)
-      else:
-        raise Exception("Insufficient power to perform action")
-    else:
-      raise Exception(f"Invalid action '{action_name}' for state '{self.state}'")
+    def __init__(self):
+        # Current state of the FSM
+        self.state = "idle"  # Assuming "idle" is the initial state
+        
+        
+    def is_action_valid(self, action_name):
+        """
+        Checks if the requested action is valid based on available power.
+
+        Args:
+            action_name (str): The name of the action to be performed.
+
+        Returns:
+            bool: True if the action is valid (enough power), False otherwise.
+        """
+
+        return (running_total) >= power_consumption[action_name]
+    def process_action(self, action_name, state, running_total):
       
-  def is_valid_action(self, action_name):
-    """
-    Checks if the action is allowed based on the current state.
+      """
+        Attempts to process the requested action, checking power availability and updating state/power.
 
-    This function implements the FSM logic to determine if an action is valid 
-    in the current state, considering additional states and power constraints.
+        Args:
+            action_name (str): The name of the action to be performed.
+            state (str): The current state of the FSM.
 
-    Args:
-      action_name (str): The name of the action to be checked.
+        Returns:
+            str: "Action successful" if valid, "Insufficient power" otherwise.
+      """
 
-    Returns:
-      bool: True if the action is valid, False otherwise.
-    """
+      if self.is_action_valid(action_name):
+        
+        # Update running total with power consumption
+        running_total -= power_consumption[action_name]
+        self.state = state  # Update state if needed
 
-    if self.state == "idle":
-      if action_name == "orientation_command":
-        self.state = "detumbling"
-        return True
-      elif action_name == "picture_command":
-        self.state = "camera"
-        return True
-    elif self.state == "detumbling":
-      if action_name == "complete_detumbling":  # Assuming this completes detumbling
-        self.state = "idle"
-        return True
-    elif self.state == "camera":
-      if action_name == "picture_captured":
-        # Check power availability before taking a picture
-        if self.engine.is_action_feasible(datetime.datetime.now(), action_name):
-          self.state="idle"
-          return True
-        else:
-          print("Insufficient power to take picture. Entering low_power state.")
-          self.state = "low_power"
-          return False
-    elif self.state == "low_power":
-      # Limited actions allowed in low power state (e.g., centrifuge for momentum control)
-      if action_name == "centrifuge":
-        # Check power availability before using centrifuge
-        if self.engine.is_action_feasible(datetime.datetime.now(), action_name):
-          return True
-        else:
-          print("Insufficient power to use centrifuge. Staying in low_power state.")
-          return False
-      # If ground pass detection is implemented, add logic here to transition to other states
-      # based on communication opportunities during ground pass
-      # elif action_name == "ground_pass":  # Assuming this indicates ground pass detection
-      #   # ... transition logic based on ground pass information ...
-      #   return True
-    else:
-      raise Exception(f"Invalid state encountered: {self.state}")  # Handle unexpected states
+        return "Action successful"
+      else:
+          return "Insufficient power for action"
 
-    return False  # Action not valid in the current state
+# Example usage (replace with your integration)
+action = "ADCS_ACTUATE"
+new_state = "active"  # Assuming action changes state
 
+fsm = FSM()  # Replace with your engine object
+result = fsm.process_action(action, new_state, running_total)
 
-
-
-
-  def _execute_action(self, action_name, duration):
-    """
-    Executes the action, updates the state, and battery level.
-
-    This function performs the actual action (e.g., taking a picture), 
-    updates the state of the FSM, and calls the engine to update the battery level 
-    based on the action's power consumption.
-
-    Args:
-      action_name (str): The name of the action to be performed.
-      duration (float): The duration (in seconds) for which to perform the action.
-    """
-    # Simulate action execution (replace with actual action code)
-    time.sleep(duration)  # Replace with actual execution logic
-    print(f"Action '{action_name}' completed")
-
-    # Update state (implement logic based on action and FSM)
-    # ...
-
-    # Update battery level based on power consumption
-    self.engine.update_battery_level(datetime.datetime.now(), action_name, duration)
+print(result)  # Should print "Action successful" or "Insufficient power for action"
