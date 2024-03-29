@@ -17,7 +17,7 @@ import datetime
 import time
 from Engine_pm import get_running_total  # Assuming this retrieves total power available
 
-filepath=r"D:\krish\Documents\UBC year 3\UBC orbit\New_power_model\Alea_Solar_Panel_Power (2).csv"
+filepath=r"Enter the filepath"
 
 running_total=get_running_total(filepath)
 state_time=0
