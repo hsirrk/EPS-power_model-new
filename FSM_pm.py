@@ -17,10 +17,14 @@ import datetime
 import time
 from Engine_pm import get_running_total  # Assuming this retrieves total power available
 
-filepath=r"Enter the filepath"
+filepath = r"D:\krish\Documents\UBC year 3\UBC orbit\New_power_model\Alea_Solar_Panel_Power (2).csv"
 
 running_total=get_running_total(filepath)
 state_time=0
+#x=16.619899999999998
+l1=[] # list to track the time spent in each "functionality"
+
+    
 
 
 # Power consumption dictionary (watts)
@@ -42,7 +46,7 @@ power_consumption = {
     "EPS_LOW_POWER": 0.043,
 }
 
-detumbling = { #%_active
+detumbling = { #%sec_active
 
     "ADCS_IDLE": 79.04,
     "ADCS_ACTUATE": 0.962,
@@ -80,7 +84,7 @@ antenna_deploy = { #sec_active
 }
 
 
-detumbed_beacon = { #%_active
+detumbed_beacon = { #%sec_active
 
     "ADCS_IDLE": 1.67,
     "ADCS_ACTUATE": 0,
@@ -98,7 +102,7 @@ detumbed_beacon = { #%_active
     "EPS_LOW_POWER": 0,
 }
 
-idle = { #%_active
+idle = { #%sec_active
 
     "ADCS_IDLE": 79.65,
     "ADCS_ACTUATE": 0.426,
@@ -117,7 +121,7 @@ idle = { #%_active
 }
 
 
-low_power = { #%_active
+low_power = { #%sec_active
 
     "ADCS_IDLE": 0,
     "ADCS_ACTUATE": 0,
@@ -183,7 +187,11 @@ voltage_consumption = {
 action_state_list=["detumbling", "antenna_deploy" , "detumbed_beacon", "idle", "low_power", "camera", "centrifuge"]
 state_time_dict={}
 
-
+def get_total_power_cons():
+    sum=0
+    for key,value in power_consumption.items():
+        sum=sum+value
+    return sum
 
 class FSM:
 
@@ -194,90 +202,77 @@ class FSM:
     def __init__(self):
         # Current state of the FSM
         self.action_state = "idle"  # Assuming "idle" is the initial state
-        
-        
-    def is_action_valid(self, action_name):
-        """
-        Checks if the requested action is valid based on available power.
-
-        Args:
-            action_name (str): The name of the action to be performed.
-
-        Returns:
-            bool: True if the action is valid (enough power), False otherwise.
-        """
-
-        return running_total >= power_consumption[action_name]
-    def process_action(self, action_name,running_total):
-      
-      """
-        Attempts to process the requested action, checking power availability and updating state/power.
-
-        Args:
-            action_name (str): The name of the action to be performed.
-            state (str): The current state of the FSM.
-
-        Returns:
-            str: "Action successful" if valid, "Insufficient power" otherwise.
-      """
-
-      if self.is_action_valid(action_name):
-        
-        # Update running total with power consumption
-        running_total = running_total-power_consumption[action_name]
-
-        return running_total
-      else:
-          return "Insufficient power for action"
     
-    def process_action_state(self,action_name,action_state_time):
+    def process_action(self, action_name,running_total, action_state_time):     
         
+        x=get_total_power_cons()
+        if action_name == "power_consumption":
+            return running_total-x
         
-        for action_state in action_state_list:
-            if action_state=="antenna_deploy":
-                state_time=antenna_deploy[action_name]
-                state_time_dict[action_state]=state_time
+        if action_name=="antenna_deploy":
+            sum=0
+            for key,value in antenna_deploy.items():
+                sum=sum+value
+                print("time spent in",key,"is:",value)
+            return sum
+        if action_name=="camera":
+            sum=0
+            for key,value in camera.items():
+                sum=sum+value
+                print("time spent in",key,"is:",value)
+            return sum
+        if action_name=="centrifuge":
+            sum=0
+            for key,value in centrifuge.items():
+                sum=sum+value
+                print("time spent in",key,"is:",value)
+            return sum
         
-            elif action_state=="camera":
-                state_time=camera[action_name]
-                state_time_dict[action_state]=state_time
-        
-            elif action_state=="centrifuge":
-                state_time=centrifuge[action_name]
-                state_time_dict[action_state]=state_time
-            
-            elif action_state=="detumbling":
-                state_time=action_state_time*detumbling[action_name]/100
-                state_time_dict[action_state]=state_time
-            
-            elif action_state=="detumbed_beacon":
-                state_time=action_state_time*detumbed_beacon[action_name]/100
-                state_time_dict[action_state]=state_time
-            
-            elif action_state=="idle":
-                state_time=action_state_time*idle[action_name]/100
-                state_time_dict[action_state]=state_time
-            
-            elif action_state=="low_power":
-                state_time=action_state_time*low_power[action_name]/100
-                state_time_dict[action_state]=state_time
- 
+        if action_name=="detumbling":
+            sum=0
+            for key,value in detumbling.items():
+                sum=sum+value*action_state_time/100
+                print("time spent in",key,"is:",value*action_state_time/100)
+            return sum
+        if action_name=="detumbed_beacon":
+            sum=0
+            for key,value in detumbed_beacon.items():
+                sum=sum+value*action_state_time/100
+                print("time spent in",key,"is:",value*action_state_time/100)
+            return sum
+        if action_name=="idle":
+            sum=0
+            for key,value in idle.items():
+                sum=sum+value*action_state_time/100
+                print("time spent in",key,"is:",value*action_state_time/100)
+            return sum
+        if action_name=="low_power":
+            sum=0
+            for key,value in low_power.items():
+                sum=sum+value*action_state_time/100
+                print("time spent in",key,"is:",value*action_state_time/100)
+            return sum
+                
+                
             
 
-# Example usage (replace with your integration)
-action_name = "EPS_LOW_POWER" # enter the action that needs to be performed
-action_state_time= 100 # enter the total time spent in the state
+for action in action_state_list:
+    action_name = action # enter the action that needs to be performed
+    action_state_time= 100 # enter the total time spent in the state
 
-fsm = FSM()  
-result = fsm.process_action(action_name, running_total)
-state_time=fsm.process_action_state(action_name,action_state_time)
+    fsm = FSM()  
+    result = fsm.process_action(action_name, running_total,action_state_time)
 
 
-if result=="Insufficient power for action":
-    print(result)
-else:
-    print(f"Action completed, Power remaining: {result} W")
+    if action_name=="power_consumption":
+        print("Total power consumed is",result,"Watts")
+    else:
+        print("Total time spent doing task is",result,"seconds")
+    print(running_total)
+    
 
     
-for key, value in state_time_dict.items():
-    print(f'{key}:{value} Sec')
+    
+        
+        
+    
