@@ -91,8 +91,9 @@ def get_running_total(filepath, time_column="Time (UTCG)", power_column="Power (
     return model.get_running_total()
 
 if __name__ == "__main__":
-    filepath = r"D:\krish\Documents\UBC year 3\UBC orbit\New_power_model\Power_Generation.csv"
+    filepath = enter file path here
     model = SolarPowerModel(filepath)
     model.main()
+
 
 
