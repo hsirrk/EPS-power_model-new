@@ -21,7 +21,7 @@ import time
 from Engine_w_timer import get_running_total  # Assuming this retrieves total power available
 import random
 
-filepath = r"D:\krish\Documents\UBC year 3\UBC orbit\New_power_model\Power_Generation.csv"
+filepath = enter filepath here
 
 # Define power consumption dictionary (watts)
 power_consumption = {
