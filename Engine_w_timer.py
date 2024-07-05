@@ -6,9 +6,11 @@ Input: the CSV data (currently)
 Output: the power generated on a timely basis (updates every 2 mins)
 
 """
+
 import pandas as pd
 import schedule
 import time
+
 
 class SolarPowerModel:
     def __init__(self, filepath, time_column="Time (UTCG)", power_column="Power (W)"):
@@ -29,11 +31,15 @@ class SolarPowerModel:
             return None
 
         if not (self.time_column in data.columns and self.power_column in data.columns):
-            print(f"Error: Columns '{self.time_column}' and '{self.power_column}' not found in CSV")
+            print(
+                f"Error: Columns '{self.time_column}' and '{self.power_column}' not found in CSV"
+            )
             return None
 
         # Ensure the power column is numeric
-        data[self.power_column] = pd.to_numeric(data[self.power_column], errors='coerce')
+        data[self.power_column] = pd.to_numeric(
+            data[self.power_column], errors="coerce"
+        )
 
         # Drop rows with non-numeric values in the power column
         data = data.dropna(subset=[self.power_column])
@@ -57,7 +63,9 @@ class SolarPowerModel:
             self.running_total += solar_power
 
             # Print the current row's data
-            print(f"Time: {time_value}, Solar Power: {solar_power} W, running total = {self.running_total}")
+            print(
+                f"Time: {time_value}, Solar Power: {solar_power} W, running total = {self.running_total}"
+            )
 
             # Move to the next row
             self.current_row += 1
@@ -86,14 +94,13 @@ class SolarPowerModel:
 
         return running_total
 
+
 def get_running_total(filepath, time_column="Time (UTCG)", power_column="Power (W)"):
     model = SolarPowerModel(filepath, time_column, power_column)
     return model.get_running_total()
 
+
 if __name__ == "__main__":
-    filepath = enter file path here
+    filepath = r"enter the filepath"
     model = SolarPowerModel(filepath)
     model.main()
-
-
-

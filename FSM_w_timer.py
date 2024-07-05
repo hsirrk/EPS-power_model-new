@@ -18,10 +18,12 @@ the power consumption dictionary).
 
 import datetime
 import time
-from Engine_w_timer import get_running_total  # Assuming this retrieves total power available
+from Engine_w_timer import (
+    get_running_total,
+)  # Assuming this retrieves total power available
 import random
 
-filepath = enter filepath here
+filepath = r"enter the filepath"
 
 # Define power consumption dictionary (watts)
 power_consumption = {
@@ -163,15 +165,21 @@ centrifuge = {
     "EPS_LOW_POWER": 0,
 }
 
-voltage_consumption = {
-    "Camera_OBC": 3.3, #volts
-    "LPU": 3.3, #volts
-    "Torquers": 5.5
-}
+voltage_consumption = {"Camera_OBC": 3.3, "LPU": 3.3, "Torquers": 5.5}  # volts  # volts
 
-action_state_list=["power_consumption","detumbling", "antenna_deploy" , "detumbed_beacon", "idle", "low_power", "camera", "centrifuge"]
-state_time_dict={}
-avg_power_cons=sum(power_consumption.values())# 16.619899999999998 W
+action_state_list = [
+    "power_consumption",
+    "detumbling",
+    "antenna_deploy",
+    "detumbed_beacon",
+    "idle",
+    "low_power",
+    "camera",
+    "centrifuge",
+]
+state_time_dict = {}
+avg_power_cons = sum(power_consumption.values())  # 16.619899999999998 W
+
 
 class FSM:
     """
@@ -180,30 +188,42 @@ class FSM:
 
     def __init__(self, battery_capacity=20):
         # Current state of the FSM
-        self.battery_capacity = battery_capacity  # Assuming the battery capacity is 20 Wh
+        self.battery_capacity = (
+            battery_capacity  # Assuming the battery capacity is 20 Wh
+        )
         self.action_state = "idle"  # Assuming "idle" is the initial state
 
-    def process_action(self, action_name, running_total, action_state_time, avg_power_cons):
+    def process_action(
+        self, action_name, running_total, action_state_time, avg_power_cons
+    ):
         total_energy_consumed = 0
         total_time_spent = 0
 
         # Check if running total power is greater than average power consumption
         if running_total < avg_power_cons:
-            print(f"Action '{action_name}' cannot be performed. Running total {running_total:.2f}W is less than average power consumption {avg_power_cons:.2f}W.")
+            print(
+                f"Action '{action_name}' cannot be performed. Running total {running_total:.2f}W is less than average power consumption {avg_power_cons:.2f}W."
+            )
             return None, None
 
         if action_name in ["detumbling", "detumbed_beacon", "idle", "low_power"]:
             total_energy_consumed = running_total * (action_state_time / 3600)
             if total_energy_consumed > self.battery_capacity:
-                print(f"Action '{action_name}' cannot be performed. Not enough battery capacity.")
+                print(
+                    f"Action '{action_name}' cannot be performed. Not enough battery capacity."
+                )
                 print(running_total)
                 return None, None
-            total_time_spent = action_state_time 
+            total_time_spent = action_state_time
 
         elif action_name in ["antenna_deploy", "camera", "centrifuge"]:
-            total_energy_consumed = running_total * (sum(eval(action_name).values()) / 3600)
+            total_energy_consumed = running_total * (
+                sum(eval(action_name).values()) / 3600
+            )
             if total_energy_consumed > self.battery_capacity:
-                print(f"Action '{action_name}' cannot be performed. Not enough battery capacity.")
+                print(
+                    f"Action '{action_name}' cannot be performed. Not enough battery capacity."
+                )
                 print(running_total)
                 return None, None
             total_time_spent = sum(eval(action_name).values())
@@ -213,8 +233,9 @@ class FSM:
 
         return total_energy_consumed, total_time_spent
 
+
 # Initialize FSM and retrieve running total
-running_total = 18 #get_running_total(filepath)
+running_total = 18  # get_running_total(filepath)
 
 # Instantiate the FSM
 fsm = FSM()
@@ -224,11 +245,17 @@ avg_power_cons = sum(power_consumption.values())
 
 # Process action based on current running total
 action_name = action_state_list[2]
-action_state_time = 100  # Provide the number of seconds for the actions that work under %seconds
-energy_consumed, time_spent = fsm.process_action(action_name, running_total, action_state_time, avg_power_cons)
+action_state_time = (
+    100  # Provide the number of seconds for the actions that work under %seconds
+)
+energy_consumed, time_spent = fsm.process_action(
+    action_name, running_total, action_state_time, avg_power_cons
+)
 
 # Check if the action was performed successfully
 if energy_consumed is not None and time_spent is not None:
-    print(f"Total power consumed: {energy_consumed:.2f} Wh, Total time spent doing {action_name}: {time_spent:.2f} seconds")
+    print(
+        f"Total power consumed: {energy_consumed:.2f} Wh, Total time spent doing {action_name}: {time_spent:.2f} seconds"
+    )
 else:
     print("Action could not be performed due to insufficient battery capacity.")
