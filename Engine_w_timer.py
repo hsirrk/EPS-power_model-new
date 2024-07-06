@@ -146,6 +146,7 @@ class SolarPowerModel:
 
         return running_total
 
+    ## ECEF to ECI Conversion from https://github.com/eribean/Geneci
     def ecef_to_eci(
         self,
         ecef_point: NDArray[np.float64],
